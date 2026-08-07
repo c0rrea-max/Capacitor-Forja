@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FORJA — Roupas, Acessórios, Suplementos e Equipamentos para Treino</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          iron:   '#17140F',
+          plate:  '#211D17',
+          steel:  '#3C362C',
+          chalk:  '#ECE7DE',
+          forge:  '#FF5A1F',
+          rust:   '#C23B12',
+          bar:    '#B8B0A0',
+        },
+        fontFamily: {
+          display: ['Anton', 'sans-serif'],
+          body: ['Space Grotesk', 'sans-serif'],
+          mono: ['JetBrains Mono', 'monospace'],
+        },
+      }
+    }
+  }
+</script>
+<style>
+  html { scroll-behavior: smooth; }
+  body { 
+    background: linear-gradient(180deg, #17140F 0%, #1d1612 30%, #22140f 60%, #281207 100%);
+    background-attachment: fixed;
+    position: relative;
+  }
+  .text-outline {
+    -webkit-text-stroke: 1.5px #ECE7DE;
+    color: transparent;
+  }
+  .plate-track {
+    background-image: repeating-linear-gradient(180deg, transparent, transparent 6px, #3C362C 6px, #3C362C 7px);
+  }
+  .grain::before {
+    content: "";
+    position: absolute; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+    pointer-events: none;
+  }
+  .plate {
+    transition: transform .5s cubic-bezier(.2,.8,.2,1), opacity .5s ease, background-color .3s ease;
+  }
+  ::selection { background: #FF5A1F; color: #17140F; }
+  .card-hover { transition: transform .3s ease, border-color .3s ease; }
+  .card-hover:hover { transform: translateY(-6px); border-color: #FF5A1F; }
+  input[type="email"]:focus, button:focus-visible, a:focus-visible {
+    outline: 2px solid #FF5A1F; outline-offset: 3px;
+  }
+</style>
+</head>
+<body class="bg-iron text-chalk font-body antialiased">
+
+<!-- SCROLL BARBELL — signature element, desktop only -->
+<div id="barbellRig" class="hidden lg:flex fixed right-6 top-1/2 -translate-y-1/2 z-40 flex-col items-center gap-0 select-none pointer-events-none">
+  <div class="w-2 h-2 rounded-full bg-steel mb-1"></div>
+  <div class="relative w-3 h-72 plate-track rounded-full overflow-visible flex flex-col justify-end items-center">
+    <div id="plateWrap" class="flex flex-col-reverse items-center gap-[3px] pb-0">
+      <!-- plates injected by JS -->
+    </div>
+  </div>
+  <div class="w-2 h-2 rounded-full bg-steel mt-1"></div>
+  <span id="loadPct" class="mt-3 font-mono text-[10px] tracking-widest text-bar">000KG</span>
+</div>
+
+<!-- NAV -->
+<header class="fixed top-0 inset-x-0 z-30 backdrop-blur bg-iron/85 border-b border-steel/60">
+  <div class="max-w-7xl mx-auto px-5 lg:px-8 h-16 flex items-center justify-between">
+    <a href="#top" class="font-display text-2xl tracking-wide text-chalk">FORJA</a>
+    <nav class="hidden md:flex items-center gap-8 font-body text-sm tracking-wide text-chalk/80">
+      <a href="#categorias" class="hover:text-forge transition-colors">Roupas</a>
+      <a href="#categorias" class="hover:text-forge transition-colors">Acessórios</a>
+      <a href="#categorias" class="hover:text-forge transition-colors">Suplementos</a>
+      <a href="#categorias" class="hover:text-forge transition-colors">Equipamentos</a>
+      <a href="#produtos" class="hover:text-forge transition-colors">Produtos</a>
+    </nav>
+    <div class="flex items-center gap-4">
+      <button id="cartBtn" class="relative flex items-center gap-2 border border-steel px-3 py-2 text-sm font-mono hover:border-forge transition-colors">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+        <span>CARRINHO</span>
+        <span id="cartCount" class="ml-1 bg-forge text-iron rounded-full w-5 h-5 grid place-items-center text-xs font-bold">0</span>
+      </button>
+      <button id="menuBtn" class="md:hidden p-2" aria-label="Abrir menu">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+    </div>
+  </div>
+  <nav id="mobileMenu" class="md:hidden hidden flex-col border-t border-steel/60 bg-iron px-5 py-4 gap-4 text-sm">
+    <a href="#categorias" class="py-1">Roupas</a>
+    <a href="#categorias" class="py-1">Acessórios</a>
+    <a href="#categorias" class="py-1">Suplementos</a>
+    <a href="#categorias" class="py-1">Equipamentos</a>
+    <a href="#produtos" class="py-1">Produtos</a>
+  </nav>
+</header>
+
+<!-- HERO -->
+<section id="top" class="relative overflow-hidden pt-32 pb-24 lg:pt-44 lg:pb-32 border-b border-steel/60 grain">
+  <div class="max-w-7xl mx-auto px-5 lg:px-8 relative z-10">
+    <p class="font-mono text-forge text-xs tracking-[0.3em] mb-5">ROUPAS · ACESSÓRIOS · SUPLEMENTOS · EQUIPAMENTOS</p>
+    <h1 class="font-display leading-[0.9] tracking-wide">
+      <span class="block text-[15vw] lg:text-[7.5rem] text-chalk">FORJA SEU</span>
+      <span class="block text-[15vw] lg:text-[7.5rem] text-outline">LIMITE</span>
+    </h1>
+    <p class="mt-8 max-w-xl text-chalk/70 text-base lg:text-lg">
+      Tudo o que sustenta uma rotina de treino séria, numa loja só. Selecionamos peça por peça, pote por pote, disco por disco — pensando em quem carrega carga de verdade.
+    </p>
+    <div class="mt-10 flex flex-wrap gap-4">
+      <a href="#produtos" class="bg-forge text-iron font-body font-semibold px-7 py-3.5 hover:bg-rust transition-colors">Ver produtos</a>
+      <a href="#categorias" class="border border-steel px-7 py-3.5 hover:border-chalk transition-colors">Explorar categorias</a>
+    </div>
+  </div>
+  <div class="absolute -bottom-10 -right-10 lg:right-10 opacity-10 lg:opacity-20 pointer-events-none">
+    <svg width="360" height="360" viewBox="0 0 100 100" fill="none" stroke="#ECE7DE" stroke-width="1.2">
+      <circle cx="50" cy="50" r="44"/><circle cx="50" cy="50" r="30"/><circle cx="50" cy="50" r="12"/>
+    </svg>
+  </div>
+</section>
+
+<!-- STATS STRIP -->
+<section class="border-b border-steel/60 bg-plate">
+  <div class="max-w-7xl mx-auto px-5 lg:px-8 py-8 grid grid-cols-2 lg:grid-cols-4 gap-8">
+    <div>
+      <p class="font-display text-3xl lg:text-4xl text-forge">12K+</p>
+      <p class="text-xs tracking-widest text-chalk/60 font-mono mt-1">CLIENTES ATIVOS</p>
+    </div>
+    <div>
+      <p class="font-display text-3xl lg:text-4xl text-forge">8 ANOS</p>
+      <p class="text-xs tracking-widest text-chalk/60 font-mono mt-1">DE MERCADO</p>
+    </div>
+    <div>
+      <p class="font-display text-3xl lg:text-4xl text-forge">420+</p>
+      <p class="text-xs tracking-widest text-chalk/60 font-mono mt-1">PRODUTOS ATIVOS</p>
+    </div>
+    <div>
+      <p class="font-display text-3xl lg:text-4xl text-forge">BR</p>
+      <p class="text-xs tracking-widest text-chalk/60 font-mono mt-1">ENTREGA NACIONAL</p>
+    </div>
+  </div>
+</section>
+
+<!-- CATEGORIAS -->
+<section id="categorias" class="border-y border-steel/60 bg-plate relative overflow-hidden">
+  <div class="max-w-7xl mx-auto px-5 lg:px-8 py-24 lg:py-28 relative z-10">
+    <div class="flex items-end justify-between mb-12 flex-wrap gap-4">
+      <h2 class="font-display text-4xl lg:text-5xl">CATEGORIAS</h2>
+      <p class="text-chalk/60 max-w-sm text-sm">Quatro frentes, um objetivo: te dar estrutura pra treinar sem desculpa.</p>
+    </div>
+    <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+
+    <button data-cat="Roupas" class="category-card card-hover text-left border border-steel bg-plate p-6 flex flex-col justify-between min-h-[240px] cursor-pointer">
+      <div>
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#FF5A1F" stroke-width="1.6"><path d="M20 6L9 17l-5-5"/></svg>
+        <h3 class="font-display text-2xl mt-5">ROUPAS</h3>
+      </div>
+      <p class="text-sm text-chalk/60">Camisetas dry-fit, leggings de compressão, shorts e regatas técnicas.</p>
+      <span class="mt-4 font-mono text-[10px] tracking-widest text-forge opacity-0 group-hover:opacity-100">VER PRODUTOS →</span>
+    </button>
+
+    <button data-cat="Acessórios" class="category-card card-hover text-left border border-steel bg-plate p-6 flex flex-col justify-between min-h-[240px] cursor-pointer">
+      <div>
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#FF5A1F" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg>
+        <h3 class="font-display text-2xl mt-5">ACESSÓRIOS</h3>
+      </div>
+      <p class="text-sm text-chalk/60">Cintos de couro, straps, luvas, munhequeiras e joelheiras.</p>
+    </button>
+
+    <button data-cat="Suplementos" class="category-card card-hover text-left border border-steel bg-plate p-6 flex flex-col justify-between min-h-[240px] cursor-pointer">
+      <div>
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#FF5A1F" stroke-width="1.6"><path d="M4 21V9a2 2 0 012-2h12a2 2 0 012 2v12"/><path d="M9 21V13h6v8"/></svg>
+        <h3 class="font-display text-2xl mt-5">SUPLEMENTOS</h3>
+      </div>
+      <p class="text-sm text-chalk/60">Whey, creatina, pré-treino e aminoácidos com origem rastreada.</p>
+    </button>
+
+    <button data-cat="Equipamentos" class="category-card card-hover text-left border border-steel bg-plate p-6 flex flex-col justify-between min-h-[240px] cursor-pointer">
+      <div>
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#FF5A1F" stroke-width="1.6"><circle cx="6" cy="12" r="3"/><circle cx="18" cy="12" r="3"/><line x1="9" y1="12" x2="15" y2="12"/></svg>
+        <h3 class="font-display text-2xl mt-5">EQUIPAMENTOS</h3>
+      </div>
+      <p class="text-sm text-chalk/60">Halteres, barras olímpicas, kettlebells, bancos e anilhas.</p>
+    </button>
+
+  </div>
+</section>
+
+<!-- PRODUTOS -->
+<section id="produtos" class="border-y border-steel/60 bg-plate relative overflow-hidden">
+  <div class="max-w-7xl mx-auto px-5 lg:px-8 py-24 lg:py-28 relative z-10">
+    <div class="flex items-end justify-between mb-8 flex-wrap gap-4">
+      <h2 id="produtosTitle" class="font-display text-4xl lg:text-5xl">TODOS OS PRODUTOS</h2>
+      <p class="text-chalk/60 max-w-sm text-sm">Escolhidos pela comunidade, testados na prática.</p>
+    </div>
+
+    <div id="filterBar" class="flex flex-wrap gap-2 mb-10">
+      <button data-cat="Todos" class="filter-chip font-mono text-xs tracking-widest px-4 py-2 border border-steel hover:border-forge transition-colors">TODOS</button>
+      <button data-cat="Roupas" class="filter-chip font-mono text-xs tracking-widest px-4 py-2 border border-steel hover:border-forge transition-colors">ROUPAS</button>
+      <button data-cat="Acessórios" class="filter-chip font-mono text-xs tracking-widest px-4 py-2 border border-steel hover:border-forge transition-colors">ACESSÓRIOS</button>
+      <button data-cat="Suplementos" class="filter-chip font-mono text-xs tracking-widest px-4 py-2 border border-steel hover:border-forge transition-colors">SUPLEMENTOS</button>
+      <button data-cat="Equipamentos" class="filter-chip font-mono text-xs tracking-widest px-4 py-2 border border-steel hover:border-forge transition-colors">EQUIPAMENTOS</button>
+    </div>
+
+    <div id="productGrid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+      <!-- cards injected by JS -->
+    </div>
+    <p id="emptyState" class="hidden text-chalk/40 text-sm font-mono">NENHUM PRODUTO NESTA CATEGORIA NO MOMENTO.</p>
+  </div>
+  <!-- Elemento central -->
+  <div class="absolute inset-x-0 top-0 flex items-start justify-center opacity-10 lg:opacity-20 pointer-events-none -translate-y-1/4">
+    <svg width="2000" height="2000" viewBox="0 0 100 100" fill="none" stroke="#ECE7DE" stroke-width="1.2">
+      <defs>
+        <linearGradient id="orangeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:#FF5A1F;stop-opacity:0.8" />
+          <stop offset="100%" style="stop-color:#C23B12;stop-opacity:0.4" />
+        </linearGradient>
+      </defs>
+      <circle cx="50" cy="50" r="44" stroke="url(#orangeGradient)"/><circle cx="50" cy="50" r="30" stroke="url(#orangeGradient)"/><circle cx="50" cy="50" r="12" stroke="url(#orangeGradient)"/>
+    </svg>
+  </div>
+  <!-- Elemento superior esquerdo -->
+  <div class="absolute -top-1/3 -left-1/4 opacity-10 lg:opacity-15 pointer-events-none">
+    <svg width="1200" height="1200" viewBox="0 0 100 100" fill="none" stroke="#ECE7DE" stroke-width="1.2">
+      <defs>
+        <linearGradient id="orangeGradient2" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:#FF5A1F;stop-opacity:0.8" />
+          <stop offset="100%" style="stop-color:#C23B12;stop-opacity:0.4" />
+        </linearGradient>
+      </defs>
+      <circle cx="50" cy="50" r="44" stroke="url(#orangeGradient2)"/><circle cx="50" cy="50" r="30" stroke="url(#orangeGradient2)"/><circle cx="50" cy="50" r="12" stroke="url(#orangeGradient2)"/>
+    </svg>
+  </div>
+  <!-- Elemento inferior direito -->
+  <div class="absolute top-1/4 right-0 opacity-10 lg:opacity-15 pointer-events-none">
+    <svg width="1200" height="1200" viewBox="0 0 100 100" fill="none" stroke="#ECE7DE" stroke-width="1.2">
+      <defs>
+        <linearGradient id="orangeGradient3" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:#FF5A1F;stop-opacity:0.8" />
+          <stop offset="100%" style="stop-color:#C23B12;stop-opacity:0.4" />
+        </linearGradient>
+      </defs>
+      <circle cx="50" cy="50" r="44" stroke="url(#orangeGradient3)"/><circle cx="50" cy="50" r="30" stroke="url(#orangeGradient3)"/><circle cx="50" cy="50" r="12" stroke="url(#orangeGradient3)"/>
+    </svg>
+  </div>
+  <!-- Elemento inferior central -->
+  <div class="absolute inset-x-0 bottom-0 flex items-end justify-center opacity-10 lg:opacity-15 pointer-events-none translate-y-1/4">
+    <svg width="1400" height="1400" viewBox="0 0 100 100" fill="none" stroke="#ECE7DE" stroke-width="1.2">
+      <defs>
+        <linearGradient id="orangeGradient4" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:#FF5A1F;stop-opacity:0.8" />
+          <stop offset="100%" style="stop-color:#C23B12;stop-opacity:0.4" />
+        </linearGradient>
+      </defs>
+      <circle cx="50" cy="50" r="44" stroke="url(#orangeGradient4)"/><circle cx="50" cy="50" r="30" stroke="url(#orangeGradient4)"/><circle cx="50" cy="50" r="12" stroke="url(#orangeGradient4)"/>
+    </svg>
+  </div>
+</section>
+
+<!-- DEPOIMENTOS -->
+<section class="max-w-7xl mx-auto px-5 lg:px-8 py-24 lg:py-28">
+  <h2 class="font-display text-4xl lg:text-5xl mb-12">QUEM TREINA, APROVA</h2>
+  <div class="grid md:grid-cols-3 gap-5">
+    <blockquote class="border border-steel p-6 bg-plate">
+      <p class="text-chalk/80 text-sm leading-relaxed">"Troquei de cinto e de whey na mesma semana. Entrega rápida e o cinto aguenta puxada pesada sem ceder."</p>
+      <footer class="mt-5 font-mono text-xs text-forge tracking-wide">— RAFAEL M., POWERLIFTING</footer>
+    </blockquote>
+    <blockquote class="border border-steel p-6 bg-plate">
+      <p class="text-chalk/80 text-sm leading-relaxed">"As leggings não marcam e não ficam transparentes nem no agachamento profundo. Virei cliente fixa."</p>
+      <footer class="mt-5 font-mono text-xs text-forge tracking-wide">— CAMILA S., CROSS TRAINING</footer>
+    </blockquote>
+    <blockquote class="border border-steel p-6 bg-plate">
+      <p class="text-chalk/80 text-sm leading-relaxed">"Montei o home gym inteiro por aqui. Kettlebell, banco e anilhas chegaram no prazo e bem embalados."</p>
+      <footer class="mt-5 font-mono text-xs text-forge tracking-wide">— DIEGO A., TREINO EM CASA</footer>
+    </blockquote>
+  </div>
+</section>
+
+<!-- NEWSLETTER -->
+<section class="border-t border-steel/60 bg-plate">
+  <div class="max-w-7xl mx-auto px-5 lg:px-8 py-20 grid lg:grid-cols-2 gap-8 items-center">
+    <div>
+      <h2 class="font-display text-3xl lg:text-4xl">TREINOS E PROMOÇÕES<br>DIRETO NO SEU E-MAIL</h2>
+      <p class="text-chalk/60 mt-4 text-sm max-w-md">Sem spam. Só lançamento de produto, cupom e conteúdo de treino uma vez por semana.</p>
+    </div>
+    <form id="newsletterForm" class="flex flex-col sm:flex-row gap-3">
+      <input id="newsletterEmail" type="email" required placeholder="seu@email.com"
+        class="flex-1 bg-iron border border-steel px-4 py-3.5 text-sm placeholder-chalk/40 focus:border-forge outline-none">
+      <button type="submit" class="bg-forge text-iron font-semibold px-7 py-3.5 hover:bg-rust transition-colors whitespace-nowrap">Quero receber</button>
+    </form>
+    <p id="newsletterMsg" class="hidden lg:col-span-2 font-mono text-xs text-forge"></p>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="max-w-7xl mx-auto px-5 lg:px-8 py-14 flex flex-col md:flex-row justify-between gap-8 border-t border-steel/60">
+  <div>
+    <p class="font-display text-2xl">FORJA</p>
+    <p class="text-chalk/50 text-sm mt-2 max-w-xs">Roupas, acessórios, suplementos e equipamentos para quem treina com propósito.</p>
+  </div>
+  <div class="flex gap-16 flex-wrap">
+    <div>
+      <p class="font-mono text-xs tracking-widest text-chalk/40 mb-3">LOJA</p>
+      <ul class="space-y-2 text-sm text-chalk/70">
+        <li><a href="#categorias" class="hover:text-forge">Roupas</a></li>
+        <li><a href="#categorias" class="hover:text-forge">Acessórios</a></li>
+        <li><a href="#categorias" class="hover:text-forge">Suplementos</a></li>
+        <li><a href="#categorias" class="hover:text-forge">Equipamentos</a></li>
+      </ul>
+    </div>
+    <div>
+      <p class="font-mono text-xs tracking-widest text-chalk/40 mb-3">SUPORTE</p>
+      <ul class="space-y-2 text-sm text-chalk/70">
+        <li><a href="#" class="hover:text-forge">Trocas e devoluções</a></li>
+        <li><a href="#" class="hover:text-forge">Frete e prazos</a></li>
+        <li><a href="#" class="hover:text-forge">Fale conosco</a></li>
+      </ul>
+    </div>
+  </div>
+  <p class="text-chalk/30 text-xs font-mono self-end">© 2026 FORJA — TODOS OS DIREITOS RESERVADOS</p>
+</footer>
+
+<!-- CART DRAWER -->
+<div id="cartOverlay" class="fixed inset-0 bg-black/60 z-40 hidden"></div>
+<aside id="cartDrawer" class="fixed top-0 right-0 h-full w-full sm:w-96 bg-iron border-l border-steel z-50 translate-x-full transition-transform duration-300 flex flex-col">
+  <div class="flex items-center justify-between px-6 py-5 border-b border-steel/60">
+    <h3 class="font-display text-xl">SEU CARRINHO</h3>
+    <button id="closeCart" aria-label="Fechar carrinho" class="text-chalk/60 hover:text-chalk">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div id="cartItems" class="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+    <p class="text-chalk/40 text-sm">Seu carrinho está vazio. Adicione um produto para começar.</p>
+  </div>
+  <div class="px-6 py-5 border-t border-steel/60">
+    <div class="flex justify-between text-sm mb-4">
+      <span class="text-chalk/60">Total</span>
+      <span id="cartTotal" class="font-mono font-semibold">R$ 0,00</span>
+    </div>
+    <button id="checkoutBtn" class="w-full bg-forge text-iron font-semibold py-3.5 hover:bg-rust transition-colors">Finalizar compra</button>
+  </div>
+</aside>
+
+<!-- CHECKOUT MODAL -->
+<div id="checkoutOverlay" class="fixed inset-0 bg-black/60 z-50 hidden"></div>
+<div id="checkoutModal" class="fixed inset-0 z-50 hidden flex items-center justify-center px-4">
+  <div class="bg-iron border border-steel max-w-md w-full p-6 rounded-lg">
+    <h4 class="font-display text-lg mb-3">Finalizar compra</h4>
+    <form id="checkoutForm" class="grid gap-3">
+      <input id="checkoutName" required placeholder="Nome completo" class="bg-iron border border-steel px-3 py-2 text-sm outline-none" />
+      <input id="checkoutEmail" type="email" required placeholder="E-mail" class="bg-iron border border-steel px-3 py-2 text-sm outline-none" />
+      <textarea id="checkoutAddress" required placeholder="Endereço de entrega" class="bg-iron border border-steel px-3 py-2 text-sm outline-none"></textarea>
+      <div class="flex items-center justify-between">
+        <button type="button" id="cancelCheckout" class="text-chalk/60">Cancelar</button>
+        <button type="submit" class="bg-forge text-iron font-semibold px-4 py-2">Enviar pedido</button>
+      </div>
+    </form>
+    <p id="checkoutMsg" class="text-sm mt-3 font-mono text-forge hidden"></p>
+  </div>
+</div>
+
+<script>
+  // ---------- DATA ----------
+  const products = [
+    { id: 1, name: "Camiseta Dry-Fit Performance", cat: "Roupas", price: 99.90, image: 'img/Camiseta.png' },
+    { id: 2, name: "Legging de Compressão Alta", cat: "Roupas", price: 139.90, image: 'img/Legging de Compressão Alta.webp' },
+    { id: 3, name: "Regata Cavada Treino Pesado", cat: "Roupas", price: 89.90, image: 'img/Regata Cavada Treino Pesado 1.webp' },
+    { id: 4, name: "Shorts Cross Training", cat: "Roupas", price: 109.90, image: 'img/Shorts Cross Training 2.png' },
+    { id: 5, name: "Cinto de Couro para Levantamento", cat: "Acessórios", price: 249.90, image: 'img/Cinto de Couro para Levantamento.webp' },
+    { id: 6, name: "Straps de Levantamento", cat: "Acessórios", price: 59.90, image: 'img/Straps de Levantamento.jpg' },
+    { id: 7, name: "Luva de Treino Premium", cat: "Acessórios", price: 69.90, image: 'img/Luva de Treino Premium.jpg' },
+    { id: 8, name: "Joelheira de Compressão Par", cat: "Acessórios", price: 89.90, image: 'img/Joelheira de Compressão Par.jpg' },
+    { id: 9, name: "Whey Protein Isolado 900g", cat: "Suplementos", price: 189.90, image: 'img/Whey Protein Isolado 900g.jpg' },
+    { id: 10, name: "Creatina Monohidratada 300g", cat: "Suplementos", price: 79.90, image: 'img/Creatina Monohidratada 300g.png' },
+    { id: 11, name: "Pré-Treino Energia Máxima", cat: "Suplementos", price: 119.90, image: 'img/Pré-Treino Energia Máxima.jpg' },
+    { id: 12, name: "BCAA 2:1:1 120 cápsulas", cat: "Suplementos", price: 69.90, image: 'img/BCAA 120 cápsulas.png' },
+    { id: 13, name: "Kettlebell 16kg", cat: "Equipamentos", price: 219.90, image: 'img/Kettlebell 16kg.jpg' },
+    { id: 14, name: "Par de Halteres Emborrachados 10kg", cat: "Equipamentos", price: 289.90, image: 'img/Par de Halteres Emborrachados 10kg.webp' },
+    { id: 15, name: "Barra Olímpica 1,80m", cat: "Equipamentos", price: 449.90, image: 'img/Barra Olímpica 1,80m.jpg' },
+    { id: 16, name: "Banco Ajustável para Musculação", cat: "Equipamentos", price: 599.90, image: 'img/Banco Ajustável para Musculação.webp' },
+    { id: 17, name: "Camiseta Oversized Casual", cat: "Roupas", price: 89.90, image: 'img/Camiseta Oversized Casual academia.png' },
+    { id: 18, name: "Calça de Treino Conforto", cat: "Roupas", price: 129.90, image: 'img/Calça de Treino Conforto.webp' },
+    { id: 19, name: "Corda de Pular Profissional", cat: "Acessórios", price: 79.90, image: 'img/Corda de Pular Profissional.webp' },
+    { id: 20, name: "Munhequeira de Compressão", cat: "Acessórios", price: 49.90, image: 'img/Munhequeira de Compressão.jpg' },
+    { id: 21, name: "Glutamina 300g", cat: "Suplementos", price: 99.90, image: 'img/Glutamina 300g.jpg' },
+    { id: 22, name: "Multivitamínico 60 cápsulas", cat: "Suplementos", price: 59.90, image: 'img/Multivitamínico 60 cápsulas.jpg' },
+    { id: 23, name: "Banco de Abdominal Ajustável", cat: "Equipamentos", price: 199.90, image: 'img/Banco de Abdominal Ajustável.jpg' },
+    { id: 24, name: "Rolo de Liberação Miofascial", cat: "Equipamentos", price: 59.90, image: 'img/Rolo de Liberação Miofascial.jpg' },
+  ];
+
+  const fmt = v => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+  // ---------- RENDER PRODUCTS (com filtro por categoria) ----------
+  const grid = document.getElementById('productGrid');
+  const emptyState = document.getElementById('emptyState');
+  const produtosTitle = document.getElementById('produtosTitle');
+  const filterChips = document.querySelectorAll('.filter-chip');
+  const categoryCards = document.querySelectorAll('.category-card');
+  let activeCat = 'Todos';
+
+  const titles = {
+    'Todos': 'TODOS OS PRODUTOS',
+    'Roupas': 'ROUPAS',
+    'Acessórios': 'ACESSÓRIOS',
+    'Suplementos': 'SUPLEMENTOS',
+    'Equipamentos': 'EQUIPAMENTOS',
+  };
+
+  function renderProducts() {
+    const list = activeCat === 'Todos' ? products : products.filter(p => p.cat === activeCat);
+    produtosTitle.textContent = titles[activeCat];
+
+    if (list.length === 0) {
+      grid.innerHTML = '';
+      emptyState.classList.remove('hidden');
+    } else {
+      emptyState.classList.add('hidden');
+      grid.innerHTML = list.map(p => `
+        <div class="card-hover border border-steel bg-iron p-5 flex flex-col">
+          <img src="${p.image}" alt="${p.name}" class="aspect-square w-full object-cover rounded-2xl border border-steel/60 mb-4 bg-[#191818]" />
+          <p class="font-mono text-[10px] tracking-widest text-forge mb-1">${p.cat.toUpperCase()}</p>
+          <h3 class="font-body font-semibold leading-snug mb-3">${p.name}</h3>
+          <div class="mt-auto flex items-center justify-between">
+            <span class="font-mono text-sm">${fmt(p.price)}</span>
+            <button data-id="${p.id}" class="add-btn text-xs font-semibold border border-steel px-3 py-2 hover:border-forge hover:text-forge transition-colors">ADICIONAR</button>
+          </div>
+        </div>
+      `).join('');
+      attachAddListeners();
+    }
+  }
+
+  function setActiveCat(cat) {
+    activeCat = cat;
+    filterChips.forEach(chip => {
+      const isActive = chip.dataset.cat === cat;
+      chip.classList.toggle('bg-forge', isActive);
+      chip.classList.toggle('text-iron', isActive);
+      chip.classList.toggle('border-forge', isActive);
+      chip.classList.toggle('text-chalk/70', !isActive);
+    });
+    categoryCards.forEach(card => {
+      const isActive = card.dataset.cat === cat;
+      card.classList.toggle('border-forge', isActive);
+    });
+    renderProducts();
+  }
+
+  filterChips.forEach(chip => {
+    chip.addEventListener('click', () => setActiveCat(chip.dataset.cat));
+  });
+
+  categoryCards.forEach(card => {
+    card.addEventListener('click', () => {
+      setActiveCat(card.dataset.cat);
+      document.getElementById('produtos').scrollIntoView({ behavior: 'smooth' });
+    });
+  });
+
+  // ---------- CART ----------
+  let cart = [];
+  const cartCount = document.getElementById('cartCount');
+  const cartItemsEl = document.getElementById('cartItems');
+  const cartTotalEl = document.getElementById('cartTotal');
+  const cartDrawer = document.getElementById('cartDrawer');
+  const cartOverlay = document.getElementById('cartOverlay');
+
+  function renderCart() {
+    cartCount.textContent = cart.reduce((s, i) => s + i.qty, 0);
+    if (cart.length === 0) {
+      cartItemsEl.innerHTML = `<p class="text-chalk/40 text-sm">Seu carrinho está vazio. Adicione um produto para começar.</p>`;
+    } else {
+      cartItemsEl.innerHTML = cart.map(i => `
+        <div class="flex flex-col gap-2 border-b border-steel/40 pb-3">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <p class="text-sm font-medium">${i.name}</p>
+              <div class="flex items-center gap-2 mt-1">
+                <button data-id="${i.id}" class="decrease text-xs font-semibold border border-steel px-2 py-1 hover:border-forge hover:text-forge transition-colors">−</button>
+                <span class="text-xs text-chalk/50 font-mono">${i.qty}</span>
+                <button data-id="${i.id}" class="increase text-xs font-semibold border border-steel px-2 py-1 hover:border-forge hover:text-forge transition-colors">+</button>
+                <span class="ml-3 text-xs text-chalk/50 font-mono">${fmt(i.price)}</span>
+              </div>
+            </div>
+            <span class="font-mono text-sm">${fmt(i.price * i.qty)}</span>
+          </div>
+          <div class="flex gap-3 items-center">
+            <button data-id="${i.id}" class="remove-item self-start text-xs font-semibold text-chalk/60 hover:text-forge transition-colors">Remover</button>
+          </div>
+        </div>
+      `).join('');
+    }
+    const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
+    cartTotalEl.textContent = fmt(total);
+  }
+
+  function removeFromCart(id) {
+    cart = cart.filter(i => i.id !== id);
+    renderCart();
+  }
+
+  function changeQty(id, delta) {
+    const item = cart.find(i => i.id === id);
+    if (!item) return;
+    item.qty = Math.max(1, item.qty + delta);
+    renderCart();
+  }
+
+  cartItemsEl.addEventListener('click', event => {
+    const removeBtn = event.target.closest('.remove-item');
+    if (removeBtn) {
+      removeFromCart(Number(removeBtn.dataset.id));
+      return;
+    }
+    const inc = event.target.closest('.increase');
+    if (inc) {
+      changeQty(Number(inc.dataset.id), 1);
+      return;
+    }
+    const dec = event.target.closest('.decrease');
+    if (dec) {
+      changeQty(Number(dec.dataset.id), -1);
+      return;
+    }
+  });
+
+  function attachAddListeners() {
+    document.querySelectorAll('.add-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = Number(btn.dataset.id);
+        const product = products.find(p => p.id === id);
+        const existing = cart.find(i => i.id === id);
+        if (existing) existing.qty++;
+        else cart.push({ ...product, qty: 1 });
+        renderCart();
+        openCart();
+        btn.textContent = "ADICIONADO";
+        setTimeout(() => btn.textContent = "ADICIONAR", 1200);
+      });
+    });
+  }
+
+  function openCart() {
+    cartDrawer.classList.remove('translate-x-full');
+    cartOverlay.classList.remove('hidden');
+  }
+  function closeCartFn() {
+    cartDrawer.classList.add('translate-x-full');
+    cartOverlay.classList.add('hidden');
+  }
+  document.getElementById('cartBtn').addEventListener('click', openCart);
+  document.getElementById('closeCart').addEventListener('click', closeCartFn);
+  cartOverlay.addEventListener('click', closeCartFn);
+
+  // ---------- MOBILE MENU ----------
+  const menuBtn = document.getElementById('menuBtn');
+  const mobileMenu = document.getElementById('mobileMenu');
+  menuBtn.addEventListener('click', () => {
+    mobileMenu.classList.toggle('hidden');
+    mobileMenu.classList.toggle('flex');
+  });
+  mobileMenu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
+    mobileMenu.classList.add('hidden');
+    mobileMenu.classList.remove('flex');
+  }));
+
+  // ---------- NEWSLETTER ----------
+  const form = document.getElementById('newsletterForm');
+  const msg = document.getElementById('newsletterMsg');
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    msg.textContent = `INSCRITO COM SUCESSO — CONFIRMAÇÃO ENVIADA PARA ${document.getElementById('newsletterEmail').value.toUpperCase()}`;
+    msg.classList.remove('hidden');
+    form.reset();
+  });
+
+  // ---------- SCROLL BARBELL (signature element) ----------
+  const PLATE_COUNT = 10;
+  const plateWrap = document.getElementById('plateWrap');
+  const loadPct = document.getElementById('loadPct');
+  for (let i = 0; i < PLATE_COUNT; i++) {
+    const el = document.createElement('div');
+    el.className = 'plate w-7 h-[10px] rounded-[2px] bg-steel opacity-20';
+    el.style.transform = 'scaleX(0.4)';
+    plateWrap.appendChild(el);
+  }
+  const plateEls = plateWrap.querySelectorAll('.plate');
+
+  function updateRig() {
+    const scrollTop = window.scrollY;
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const ratio = Math.min(1, Math.max(0, scrollTop / docHeight));
+    const activeCount = Math.round(ratio * PLATE_COUNT);
+    plateEls.forEach((el, idx) => {
+      if (idx < activeCount) {
+        el.style.backgroundColor = '#FF5A1F';
+        el.style.opacity = '1';
+        el.style.transform = 'scaleX(1)';
+      } else {
+        el.style.backgroundColor = '';
+        el.style.opacity = '0.2';
+        el.style.transform = 'scaleX(0.4)';
+      }
+    });
+    loadPct.textContent = String(Math.round(ratio * 100)).padStart(3, '0') + 'KG';
+  }
+  window.addEventListener('scroll', updateRig, { passive: true });
+  window.addEventListener('resize', updateRig);
+  updateRig();
+
+  // ---------- INIT ----------
+  setActiveCat('Todos');
+
+  // ---------- CHECKOUT ----------
+  const checkoutBtn = document.getElementById('checkoutBtn');
+  const checkoutOverlay = document.getElementById('checkoutOverlay');
+  const checkoutModal = document.getElementById('checkoutModal');
+  const checkoutForm = document.getElementById('checkoutForm');
+  const cancelCheckout = document.getElementById('cancelCheckout');
+  const checkoutMsg = document.getElementById('checkoutMsg');
+
+  function openCheckout() {
+    if (!cart || cart.length === 0) {
+      const prev = cartItemsEl.innerHTML;
+      cartItemsEl.innerHTML = `<p class="text-chalk/40 text-sm">Seu carrinho está vazio. Adicione um produto para começar.</p>`;
+      setTimeout(() => renderCart(), 1200);
+      return;
+    }
+    checkoutOverlay.classList.remove('hidden');
+    checkoutModal.classList.remove('hidden');
+  }
+
+  function closeCheckout() {
+    checkoutOverlay.classList.add('hidden');
+    checkoutModal.classList.add('hidden');
+    if (checkoutForm) checkoutForm.reset();
+    if (checkoutMsg) checkoutMsg.classList.add('hidden');
+  }
+
+  if (checkoutBtn) checkoutBtn.addEventListener('click', openCheckout);
+  if (cancelCheckout) cancelCheckout.addEventListener('click', closeCheckout);
+  if (checkoutOverlay) checkoutOverlay.addEventListener('click', closeCheckout);
+
+  if (checkoutForm) {
+    checkoutForm.addEventListener('submit', e => {
+      e.preventDefault();
+      const name = document.getElementById('checkoutName').value.trim();
+      const email = document.getElementById('checkoutEmail').value.trim();
+      const address = document.getElementById('checkoutAddress').value.trim();
+      if (!name || !email || !address) return;
+      const orderId = Date.now().toString(36).toUpperCase();
+      checkoutMsg.textContent = `Pedido ${orderId} recebido! Enviaremos confirmação para ${email.toUpperCase()}.`;
+      checkoutMsg.classList.remove('hidden');
+      // limpar carrinho
+      cart = [];
+      renderCart();
+      setTimeout(() => {
+        closeCheckout();
+        openCart();
+      }, 1600);
+    });
+  }
+</script>
+</body>
+</html>
